@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 //@WebServlet(name = "FontServlet", value = "/FontServlet")
 public class FontServlet extends HttpServlet {
@@ -34,8 +35,15 @@ public class FontServlet extends HttpServlet {
     public void processRequest(HttpServletRequest req,HttpServletResponse res)throws IOException{
         res.setContentType("text/plain");
         PrintWriter out=res.getWriter();
-/// Display URL
         try {
+///HashMap
+            for (Map.Entry<String, Mapping> entry : mappingUrls.entrySet()) {
+                out.println("\tAnnotation : \"" + entry.getKey() + "\"");
+                out.println("\tClass:" + entry.getValue().getClassName());
+                out.println("\tMethod:" + entry.getValue().getMethod());
+                out.println("\n\n\n");
+            }
+/// Display URL
             out.print("URL Tomcat = ");
             String projet = req.getRequestURL().toString();
             String host = req.getHeader("Host");
@@ -76,11 +84,14 @@ public class FontServlet extends HttpServlet {
                 String className  = "etu2064.framework.modele." +classe[i];
                 Class<?> clazz = Class.forName(className);
                 Method [] methods = clazz.getDeclaredMethods();
-                for (int j = 0 ; j<methods.length ; j++) {
-                    Annotation[] url = methods[j].getAnnotations();
-                    Url u = methods[i].getAnnotation(Url.class);
-                    mapping.put(u.name(),new Mapping(classe[i],methods[i].getName()));
-                    //System.out.println(u.name()+" / "+classe[i]+" / "+methods[i].getName());
+                for (Method method : methods) {
+                    Annotation[] url = method.getAnnotations();
+                    if(url.length > 0 ){
+                        Url  u = methods[i].getAnnotation(Url.class);
+                        System.out.println(u.toString());
+                        mappingUrls.put(u.name(),new Mapping(classe[i],method.getName()));
+                       System.out.println(u.name()+" / "+classe[i]+" / "+methods[i].getName());
+                    }
                 }
             }
         } catch (Exception ex) {
