@@ -1,6 +1,7 @@
 package etu2064.framework.modele;
 
 import etu2064.framework.myAnnotations.Url;
+import etu2064.framework.myAnnotations.Param;
 import etu2064.framework.view.ModelView;
 import java.util.Map;
 
@@ -52,6 +53,16 @@ public class Person {
       ModelView mv = new ModelView();
       Person p = new Person(this.getnom(), this.getage());
       Map<String, Object> att = new ModelView().addItem("form",p);
+      mv.setView(jsp);
+      mv.setAttribut(att);
+      return mv;
+    }
+    @Url(name="get_Person")
+    public ModelView get(@Param(p="nom")String nom , @Param(p="age")int age){
+      String jsp = "get.jsp";
+      ModelView mv = new ModelView();
+      Person p = new Person(nom, age);
+      Map<String, Object> att = new ModelView().addItem("get",p);
       mv.setView(jsp);
       mv.setAttribut(att);
       return mv;

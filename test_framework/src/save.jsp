@@ -1,5 +1,5 @@
 <%@page import="etu2064.framework.modele.Person"%>
 <p>Valeur:</p>
 <% Person e =(Person)request.getAttribute("form"); %>
-<% out.print(e.getnom()); %>
-<% out.print(e.getage()); %>
+<p>Nom :<% out.print(e.getnom()); %></p>
+<p>Age :<% out.print(e.getage()); %></p>

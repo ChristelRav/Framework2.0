@@ -8,6 +8,7 @@ echo %var%
 @REM compilation en point class
 javac -d .\ .\doc\Mapping.java
 javac -d .\ .\doc\Url.java
+javac -d .\ .\doc\Param.java
 javac -d .\ .\doc\ModelView.java
 javac -d .\ .\doc\FrontServlet.java
 @REM transformer en .jar
@@ -27,6 +28,7 @@ copy .\test_framework\src\load.jsp .\project\
 copy .\test_framework\src\send.jsp .\project\
 copy .\test_framework\src\form.jsp .\project\
 copy .\test_framework\src\save.jsp .\project\
+copy .\test_framework\src\get.jsp .\project\
 @REM  copier web.xml dans WEB-INF du projet
 copy .\test_framework\src\web.xml .\project\WEB-INF\
 @REM compilation des modeles
