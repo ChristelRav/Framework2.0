@@ -1,8 +1,9 @@
 package etu2064.framework.servlet;
 
 import etu2064.framework.Mapping;
+import etu2064.framework.view.ModelView;
 import etu2064.framework.myAnnotations.Url;
-import etu2064.framework.view.ModelView; 
+import etu2064.framework.myAnnotations.Param;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -10,9 +11,12 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.RequestDispatcher;
-
+import java.text.SimpleDateFormat;
+import java.lang.reflect.*;
+import java.sql.*; 
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import java.io.File;
@@ -23,26 +27,19 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
-import java.lang.reflect.Field;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.sql.Time;
-
 
 
 public class FrontServlet  extends HttpServlet{
-    HashMap<String,Mapping> mappingUrls = new HashMap<String,Mapping>();
-    String modele ;
-    //--INIT
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-        modele = getInitParameter("package");
-        String path = getServletContext().getRealPath("/WEB-INF/classes/"+modele);
-        fillMappingUrls(path);
-    }
-
-    
-    //--GET
+     HashMap<String,Mapping> mappingUrls = new HashMap<String,Mapping>();
+     String modele ;
+     //INIT
+     public void init(ServletConfig config) throws ServletException {
+         super.init(config);
+         modele = getInitParameter("package");
+         String path = getServletContext().getRealPath("/WEB-INF/classes/"+modele);
+         fillMappingUrls(path);
+     }
+    //GET
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws  ServletException, IOException  {
         res.setContentType("text/plain");
         PrintWriter out = res.getWriter();
@@ -54,7 +51,7 @@ public class FrontServlet  extends HttpServlet{
             out.print(exp);
         }
     }
-    //--POST
+    //POST
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws  ServletException, IOException  {
         res.setContentType("text/plain");
         PrintWriter out = res.getWriter();
@@ -66,67 +63,63 @@ public class FrontServlet  extends HttpServlet{
         }
     }
  
-    //--PROCESS REQUEST
+    //PROCESS REQUEST
     public void processRequest(HttpServletRequest req,HttpServletResponse res)throws IOException , Exception , ServletException{
         res.setContentType("text/html");
         PrintWriter out = res.getWriter();
         ServletContext result = this.getServletContext();
-        try {
-        ///--Display URL 
-        String projet = req.getRequestURL().toString();
-        String host = req.getHeader("Host");
-        String[] partieUrl = projet.split(host);
-        String chemin = partieUrl[1].substring(1);
-        Vector<String> str = new Vector<String>();
-        String action = chemin.substring(chemin.lastIndexOf("/") + 1);
-        String packageName = modele.replace("/", ".");
-        
-            ///--Display view
+        try {        
+            /// Display URL 
+            String projet = req.getRequestURL().toString();
+            String host = req.getHeader("Host");
+
+            String[] partieUrl = projet.split(host);
+            String chemin = partieUrl[1].substring(1);
+
+            String action = chemin.substring(chemin.lastIndexOf("/") + 1);
+            String packageName = modele.replace("/", ".");
+          
+            ///--Display vue
             if (mappingUrls.containsKey(action)) {
                 Mapping valeur = mappingUrls.get(action);
+
                 Class<?> maClasse = Class.forName(packageName+valeur.getClassName());
                 Object obj = maClasse.newInstance();
-                Method maMethode = maClasse.getDeclaredMethod(valeur.getMethod());
-                Class<?> returnType = maMethode.getReturnType(); 
-                    if (returnType.equals(ModelView.class)) {
-    
-                        //Field et Parametre 
-                        Field [] field = obj.getClass().getDeclaredFields();
-                        Enumeration<String> paramNames = req.getParameterNames();
-                        while (paramNames.hasMoreElements()) {
-                            String paramName = paramNames.nextElement();
-                        
-                                //Verifier si le parametre fait partie des attributs de la classe 
-                                for(int j=0;j<field.length;j++)  {
-                                    if(field[j].getName().equals(paramName)) {
-                                         String[] paramValues = req.getParameterValues(paramName);
-                                         Method method= obj.getClass().getMethod("set"+field[j].getName(), field[j].getType());
-                                         Object paramValue = castValue(field[j].getType(),paramValues[0]);
-                                         out.print("<p>"+paramValue+"</p>");
-                                         method.invoke(obj,paramValue);
-                                    }
-                                 }
+                Method[] methods = maClasse.getDeclaredMethods();
+                for (int i = 0; i < methods.length; i++) {
+                    if(methods[i].getName().equals(valeur.getMethod())){
+                        Class<?> returnType = methods[i].getReturnType();
+                        if (returnType.equals(ModelView.class)) { 
+                            Enumeration<String> paramNames = req.getParameterNames();
+                            ModelView mv = null;
+                            Parameter[] parameters = methods[i].getParameters();
+                            Object[] arg = new Object[parameters.length];
+                            out.print(parameters.length);
+                            //Choix  avec ou sans parmetre ilay methode
+                            if(parameters.length == 0){
+                                processNoParams(req, obj);
+                                mv = (ModelView) methods[i].invoke(obj);                            
+                            }else if(parameters.length > 0){
+                                processParams(req, parameters, arg);
+                                mv = (ModelView) methods[i].invoke(obj, arg);   
                             }
-
-                        ///--envoie de qlq choz
-                        ModelView mv = (ModelView)maMethode.invoke(obj);
-                        for (Map.Entry<String, Object> entry : mv.getAttribut().entrySet()) {
-                            String cle = entry.getKey();
-                            Object vl = entry.getValue();
-                            req.setAttribute(cle,vl);
-                        } 
-                        RequestDispatcher dispat = req.getRequestDispatcher(mv.getView());
-                        dispat.forward(req,res);
-                    }else{
-                        out.println("<p>Aucune vue disponible</p>");
+                            ///--envoie de qlq choz
+                            for (Map.Entry<String, Object> entry : mv.getAttribut().entrySet()) {
+                                String cle = entry.getKey();
+                                Object vl = entry.getValue();
+                                req.setAttribute(cle,vl);
+                            }
+                            RequestDispatcher dispat = req.getRequestDispatcher(mv.getView());
+                            dispat.forward(req,res);
+                        } else{
+                            out.println("<p>Aucune vue disponible</p>");
+                        }
                     }
-
-            } 
-           } catch (Exception e) {
-            e.printStackTrace(out);
-           }
-        
-
+                }
+            }
+        }catch (Exception e) {
+            out.println(e.getMessage());
+        }
     }
     //SEARCH CLASS
     public ArrayList<String> getClassNames(String path) {
@@ -169,8 +162,6 @@ public class FrontServlet  extends HttpServlet{
             e.printStackTrace();
         }
     }   
-
-    //Convertir les parametres 
     public Object castValue(Class<?> type, String value) throws Exception{
         if (type == String.class) {
             return value;
@@ -193,6 +184,37 @@ public class FrontServlet  extends HttpServlet{
         }else {
             return null;
         }
-    }   
-   
-}
+    }
+    private void processNoParams(HttpServletRequest req, Object obj) throws Exception {
+        Enumeration<String> paramNames = req.getParameterNames();
+        Field[] fields = obj.getClass().getDeclaredFields();
+        while (paramNames.hasMoreElements()) {
+            String paramName = paramNames.nextElement();
+            for (Field field : fields) {
+                if (field.getName().equals(paramName)) {
+                    String[] paramValues = req.getParameterValues(paramName);
+                    Method method = obj.getClass().getMethod("set" + field.getName(), field.getType());
+                    Object paramValue = castValue(field.getType(), paramValues[0]);
+                    method.invoke(obj, paramValue);
+                }
+            }
+        }
+    }
+    private void processParams(HttpServletRequest req, Parameter[] parameters, Object[] arg) throws Exception {
+        Enumeration<String> paramNames = req.getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String paramName = paramNames.nextElement();
+            for (int j = 0; j < parameters.length; j++) {
+                if (paramName.equals(parameters[j].getAnnotation(Param.class).p())) {
+                    String[] paramValues = req.getParameterValues(paramName);
+                    if (paramValues != null && paramValues.length == 1) {
+                        arg[j] = castValue(parameters[j].getType(), paramValues[0]);
+                    }
+                }
+            }
+        }
+    }
+        
+
+
+}   
