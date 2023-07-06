@@ -22,6 +22,8 @@ echo %CLASSPATH%
 mkdir .\project .\project\WEB-INF .\project\WEB-INF\classes .\project\WEB-INF\lib
 @REM copier fw.jar dans lib du projet
 copy .\fw.jar .\project\WEB-INF\lib
+@REM copier les poits jsp de la classe Person 
+copy .\test_framework\src\load.jsp .\project\
 copy .\test_framework\src\load.jsp .\project\
 @REM  copier web.xml dans WEB-INF du projet
 copy .\test_framework\src\web.xml .\project\WEB-INF\

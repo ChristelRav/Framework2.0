@@ -2,6 +2,7 @@ package etu2064.framework.modele;
 
 import etu2064.framework.myAnnotations.Url;
 import etu2064.framework.view.ModelView;
+import java.util.Map;
 
 public class Person {
     String nom;
@@ -28,5 +29,14 @@ public class Person {
       String jsp = "load.jsp";
       return jsp;
     }
-    
+    @Url(name="send_Person")
+    public ModelView sendEmp(){
+      String jsp = "send.jsp";
+      Person p = new Person("Ialy", 25);
+      Map <String , Object> att = new ModelView().addItem("pers",p);
+      ModelView mv = new ModelView();
+      mv.setView(jsp);
+      mv.setAttribut(att);
+      return mv;
+    }
 }

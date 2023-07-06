@@ -85,7 +85,14 @@ public class FrontServlet  extends HttpServlet{
                 Method maMethode = maClasse.getDeclaredMethod(valeur.getMethod());
                 Class<?> returnType = maMethode.getReturnType(); 
                     if (returnType.equals(ModelView.class)) {
-                        ModelView mv = (ModelView)maMethode.invoke(obj); 
+                        ModelView mv = (ModelView)maMethode.invoke(obj);
+                        
+                        ///--envoie de qlq choz
+                        for (Map.Entry<String, Object> entry : mv.getAttribut().entrySet()) {
+                            String cle = entry.getKey();
+                            Object vl = entry.getValue();
+                            req.setAttribute(cle,vl);
+                        } 
                         RequestDispatcher dispat = req.getRequestDispatcher(mv.getView());
                         dispat.forward(req,res);
                     }else{
