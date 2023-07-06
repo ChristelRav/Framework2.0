@@ -2,7 +2,7 @@ package etu2064.framework.servlet;
 
 import etu2064.framework.Mapping;
 import etu2064.framework.myAnnotations.Url;
-import etu2064.framework.view.ModelView;
+import etu2064.framework.view.ModelView; 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -22,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
+import java.lang.reflect.Field;
 
 
 public class FrontServlet  extends HttpServlet{
     HashMap<String,Mapping> mappingUrls = new HashMap<String,Mapping>();
     String modele ;
-    //INIT
+    //--INIT
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         modele = getInitParameter("package");
@@ -36,7 +38,7 @@ public class FrontServlet  extends HttpServlet{
     }
 
     
-    //GET
+    //--GET
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws  ServletException, IOException  {
         res.setContentType("text/plain");
         PrintWriter out = res.getWriter();
@@ -48,7 +50,7 @@ public class FrontServlet  extends HttpServlet{
             out.print(exp);
         }
     }
-    //POST
+    //--POST
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws  ServletException, IOException  {
         res.setContentType("text/plain");
         PrintWriter out = res.getWriter();
@@ -60,41 +62,44 @@ public class FrontServlet  extends HttpServlet{
         }
     }
  
-    //PROCESS REQUEST
+    //--PROCESS REQUEST
     public void processRequest(HttpServletRequest req,HttpServletResponse res)throws IOException , Exception , ServletException{
         res.setContentType("text/html");
         PrintWriter out = res.getWriter();
         ServletContext result = this.getServletContext();
+        try {
+        ///--Display URL 
+        String projet = req.getRequestURL().toString();
+        String host = req.getHeader("Host");
+        String[] partieUrl = projet.split(host);
+        String chemin = partieUrl[1].substring(1);
+        Vector<String> str = new Vector<String>();
+        String action = chemin.substring(chemin.lastIndexOf("/") + 1);
+        String packageName = modele.replace("/", ".");
         
-        /// Display URL 
-       try {
-            String projet = req.getRequestURL().toString();
-            String host = req.getHeader("Host");
+            ///--Display view
+            if (mappingUrls.containsKey(action)) {
+                Mapping valeur = mappingUrls.get(action);
+                Class<?> maClasse = Class.forName(packageName+valeur.getClassName());
+                Object obj = maClasse.newInstance();
+                Method maMethode = maClasse.getDeclaredMethod(valeur.getMethod());
+                Class<?> returnType = maMethode.getReturnType(); 
+                    if (returnType.equals(ModelView.class)) {
+                        ModelView mv = (ModelView)maMethode.invoke(obj);
+                        
+                        ///--envoie de qlq choz
+                        for (Map.Entry<String, Object> entry : mv.getAttribut().entrySet()) {
+                            String cle = entry.getKey();
+                            Object vl = entry.getValue();
+                            req.setAttribute(cle,vl);
+                        } 
+                        RequestDispatcher dispat = req.getRequestDispatcher(mv.getView());
+                        dispat.forward(req,res);
+                    }else{
+                        out.println("<p>Aucune vue disponible</p>");
+                    }
 
-            String[] partieUrl = projet.split(host);
-            String chemin = partieUrl[1].substring(1);
-            out.print("/"+chemin);
-
-            out.print("<p>"+modele+"</p>");
-            
-            String action = chemin.substring(chemin.lastIndexOf("/") + 1);
-            out.print("<p>"+action+"</p>");
-
-            
-            String packageName = modele.replace("/", ".");
-            out.print("<p> Lala "+packageName+"</p>");
-
-            out.print("<p> Lala "+mappingUrls.isEmpty()+"</p>");
-
-        ///Display Class
-        
-            for (Map.Entry<String, Mapping> entry : mappingUrls.entrySet()) {
-                out.println("<p><strong>Annotation  </strong>: \"" + entry.getKey() + "\"</p>");
-                out.println("<p><strong>Class </strong>:" + entry.getValue().getClassName()+"</p>");
-                out.println("<p><strong>Method </strong>:" + entry.getValue().getMethod()+"</p>");
-                out.println("\n\n");
-            }
-           
+            } 
            } catch (Exception e) {
             e.printStackTrace(out);
            }
@@ -141,7 +146,8 @@ public class FrontServlet  extends HttpServlet{
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }   
+
     
    
 }
