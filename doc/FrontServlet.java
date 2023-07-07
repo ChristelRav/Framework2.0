@@ -4,12 +4,18 @@ import etu2064.framework.Mapping;
 import etu2064.framework.view.ModelView;
 import etu2064.framework.myAnnotations.Url;
 import etu2064.framework.myAnnotations.Param;
+import etu2064.framework.FileUpload;
+
+
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import jakarta.servlet.RequestDispatcher;
 import java.text.SimpleDateFormat;
 import java.lang.reflect.*;
@@ -18,6 +24,9 @@ import java.sql.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Collection;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-
+@MultipartConfig
 public class FrontServlet  extends HttpServlet{
      HashMap<String,Mapping> mappingUrls = new HashMap<String,Mapping>();
      String modele ;
@@ -100,7 +109,7 @@ public class FrontServlet  extends HttpServlet{
                                 processNoParams(req, obj);
                                 mv = (ModelView) methods[i].invoke(obj);                            
                             }else if(parameters.length > 0){
-                                processParams(req, parameters, arg);
+                                processParams(req ,res , parameters, arg);
                                 mv = (ModelView) methods[i].invoke(obj, arg);   
                             }
                             ///--envoie de qlq choz
@@ -200,19 +209,54 @@ public class FrontServlet  extends HttpServlet{
             }
         }
     }
-    private void processParams(HttpServletRequest req, Parameter[] parameters, Object[] arg) throws Exception {
-        Enumeration<String> paramNames = req.getParameterNames();
-        while (paramNames.hasMoreElements()) {
-            String paramName = paramNames.nextElement();
-            for (int j = 0; j < parameters.length; j++) {
-                if (paramName.equals(parameters[j].getAnnotation(Param.class).p())) {
-                    String[] paramValues = req.getParameterValues(paramName);
-                    if (paramValues != null && paramValues.length == 1) {
-                        arg[j] = castValue(parameters[j].getType(), paramValues[0]);
-                    }
+    public void processParams(HttpServletRequest req, HttpServletResponse res, Parameter[] parameters, Object[] arg ) throws Exception {
+    
+        for (int j = 0; j < parameters.length; j++) {
+            Param annotation = parameters[j].getAnnotation(Param.class);
+            if (annotation != null) {
+                String paramName = annotation.p();
+                String[] paramValues = req.getParameterValues(paramName);
+                if (parameters[j].getType().equals(FileUpload.class)) {
+                    FileUpload fl = uploadFile(req, res);
+                    arg[j] = fl;
+                }
+                if (paramValues != null && paramValues.length == 1) {
+                    arg[j] = castValue(parameters[j].getType(), paramValues[0]);
                 }
             }
         }
+       
+    }
+    public String extractFileName(Part part) {
+        String contentDisposition = part.getHeader("content-disposition");
+        String[] items = contentDisposition.split(";");
+        for (String item : items) {
+            if (item.trim().startsWith("filename")) {
+                return item.substring(item.indexOf("=") + 2, item.length() - 1);
+            }
+        }
+        return "";
+    }
+    public FileUpload uploadFile(HttpServletRequest req, HttpServletResponse res)  throws Exception{
+        try {
+            FileUpload fl = new FileUpload();
+            String uploadPath = getServletContext().getRealPath("") + File.separator + "dev";
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdir();
+            }
+            List<Part> parts = (List<Part>) req.getParts();
+            for (Part part : parts) {
+                res.getWriter().println(parts);
+                String fileName = extractFileName(part);
+                part.write(uploadPath + File.separator + fileName);
+                fl.setnameFile(fileName);
+            }
+            return fl;
+        } catch (Exception exp) {
+           exp.printStackTrace();
+        }
+        return null;
     }
         
 
