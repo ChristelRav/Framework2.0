@@ -15,6 +15,15 @@
             <param-name>package</param-name>
             <param-value>etu2064/framework/modele/</param-value>
         </init-param>
+<!--Sprint11-->  
+     <init-param>
+            <param-name>sessionName</param-name> 
+            <param-value>isConnected</param-value> 
+        </init-param>
+        <init-param>
+            <param-name>sessionProfile</param-name>
+            <param-value>profile</param-value>
+        </init-param>        
     </servlet>
 <!--Sprint1-->    
     <servlet-mapping>

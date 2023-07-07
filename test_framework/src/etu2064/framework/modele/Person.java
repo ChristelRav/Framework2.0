@@ -3,6 +3,7 @@ package etu2064.framework.modele;
 import etu2064.framework.myAnnotations.Url;
 import etu2064.framework.myAnnotations.Scope;
 import etu2064.framework.myAnnotations.Param;
+import etu2064.framework.myAnnotations.Auth;
 import etu2064.framework.view.ModelView;
 import java.util.Map;
 import etu2064.framework.*;
@@ -31,11 +32,13 @@ public class Person {
       String jsp = "load.jsp";
       ModelView mv = new ModelView();
       mv.setView(jsp);
+      mv.addSession("isConnected", true);
+      mv.addSession("profile", "admin");
       return mv;
     }
     @Url(name="simple_Person")
     public String simple(){
-      String jsp = "load.jsp";
+      String jsp = "Coucou";
       return jsp;
     }
     @Url(name="send_Person")
