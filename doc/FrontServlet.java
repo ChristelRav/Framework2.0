@@ -6,6 +6,7 @@ import etu2064.framework.myAnnotations.Url;
 import etu2064.framework.myAnnotations.Scope;
 import etu2064.framework.myAnnotations.Param;
 import etu2064.framework.FileUpload;
+import etu2064.framework.myAnnotations.Auth;
 
 
 import jakarta.servlet.ServletConfig;
@@ -38,15 +39,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+
 @MultipartConfig
 public class FrontServlet  extends HttpServlet{
      HashMap<String,Mapping> mappingUrls = new HashMap<String,Mapping>();
      HashMap<Class<?>,Object> singleC = new HashMap<Class<?>,Object>();
-     String modele ;
+     String modele , sessionName , sessionProfile;
      //INIT
      public void init(ServletConfig config) throws ServletException {
          super.init(config);
          modele = getInitParameter("package");
+         sessionName = getInitParameter("sessionName");
+         sessionProfile = getInitParameter("sessionProfile");
          String path = getServletContext().getRealPath("/WEB-INF/classes/"+modele);
          fillMappingUrls(path);
          fillsingleC();
@@ -107,6 +111,9 @@ public class FrontServlet  extends HttpServlet{
                             Parameter[] parameters = methods[i].getParameters();
                             Object[] arg = new Object[parameters.length];
                             out.print(parameters.length);
+                            if(methods[i].isAnnotationPresent(Auth.class)){
+                                Auth a = (Auth) methods[i].getAnnotation(Auth.class);
+                            }
                             //Choix  avec ou sans parmetre ilay methode
                             if(parameters.length == 0){
                                 processNoParams(req, obj);
@@ -128,6 +135,8 @@ public class FrontServlet  extends HttpServlet{
                         }
                     }
                 }
+            }else{
+                out.println("<p>Aucune vue disponible</p>");
             }
         }catch (Exception e) {
             out.println(e.getMessage());
