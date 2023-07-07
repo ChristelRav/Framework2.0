@@ -1,11 +1,13 @@
 package etu2064.framework.modele;
 
 import etu2064.framework.myAnnotations.Url;
+import etu2064.framework.myAnnotations.Scope;
 import etu2064.framework.myAnnotations.Param;
 import etu2064.framework.view.ModelView;
 import java.util.Map;
 import etu2064.framework.*;
 
+@Scope(singleton=true)
 public class Person {
     String nom;
     int age;

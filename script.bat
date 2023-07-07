@@ -9,6 +9,7 @@ echo %var%
 javac -d .\ .\doc\Mapping.java
 javac -d .\ .\doc\FileUpload.java
 javac -d .\ .\doc\Url.java
+javac -d .\ .\doc\Scope.java
 javac -d .\ .\doc\Param.java
 javac -d .\ .\doc\ModelView.java
 javac -d .\ .\doc\FrontServlet.java

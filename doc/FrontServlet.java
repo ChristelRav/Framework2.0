@@ -3,6 +3,7 @@ package etu2064.framework.servlet;
 import etu2064.framework.Mapping;
 import etu2064.framework.view.ModelView;
 import etu2064.framework.myAnnotations.Url;
+import etu2064.framework.myAnnotations.Scope;
 import etu2064.framework.myAnnotations.Param;
 import etu2064.framework.FileUpload;
 
@@ -40,6 +41,7 @@ import java.util.Vector;
 @MultipartConfig
 public class FrontServlet  extends HttpServlet{
      HashMap<String,Mapping> mappingUrls = new HashMap<String,Mapping>();
+     HashMap<Class<?>,Object> singleC = new HashMap<Class<?>,Object>();
      String modele ;
      //INIT
      public void init(ServletConfig config) throws ServletException {
@@ -47,6 +49,7 @@ public class FrontServlet  extends HttpServlet{
          modele = getInitParameter("package");
          String path = getServletContext().getRealPath("/WEB-INF/classes/"+modele);
          fillMappingUrls(path);
+         fillsingleC();
      }
     //GET
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws  ServletException, IOException  {
@@ -93,7 +96,7 @@ public class FrontServlet  extends HttpServlet{
                 Mapping valeur = mappingUrls.get(action);
 
                 Class<?> maClasse = Class.forName(packageName+valeur.getClassName());
-                Object obj = maClasse.newInstance();
+                Object obj =  SingletonInstances(maClasse);
                 Method[] methods = maClasse.getDeclaredMethods();
                 for (int i = 0; i < methods.length; i++) {
                     if(methods[i].getName().equals(valeur.getMethod())){
@@ -171,6 +174,8 @@ public class FrontServlet  extends HttpServlet{
             e.printStackTrace();
         }
     }   
+
+    //CONVERTIR LES PARAMETRES
     public Object castValue(Class<?> type, String value) throws Exception{
         if (type == String.class) {
             return value;
@@ -194,6 +199,8 @@ public class FrontServlet  extends HttpServlet{
             return null;
         }
     }
+
+    //SP7
     private void processNoParams(HttpServletRequest req, Object obj) throws Exception {
         Enumeration<String> paramNames = req.getParameterNames();
         Field[] fields = obj.getClass().getDeclaredFields();
@@ -209,6 +216,8 @@ public class FrontServlet  extends HttpServlet{
             }
         }
     }
+
+    //SP8  + SP9   
     public void processParams(HttpServletRequest req, HttpServletResponse res, Parameter[] parameters, Object[] arg ) throws Exception {
     
         for (int j = 0; j < parameters.length; j++) {
@@ -227,6 +236,8 @@ public class FrontServlet  extends HttpServlet{
         }
        
     }
+
+    //NOM DU FICHIER
     public String extractFileName(Part part) {
         String contentDisposition = part.getHeader("content-disposition");
         String[] items = contentDisposition.split(";");
@@ -237,6 +248,8 @@ public class FrontServlet  extends HttpServlet{
         }
         return "";
     }
+
+    //GET FICHIER A UPLOAD-ER
     public FileUpload uploadFile(HttpServletRequest req, HttpServletResponse res)  throws Exception{
         try {
             FileUpload fl = new FileUpload();
@@ -259,6 +272,68 @@ public class FrontServlet  extends HttpServlet{
         return null;
     }
         
+    //GET CLASS OF SCOPE
+    public void fillsingleC(){
+        try {
+         String packageName = modele.replace("/", ".");
+         for (Map.Entry<String, Mapping> entry : mappingUrls.entrySet()) {
+             Class<?> clazz = Class.forName(packageName+entry.getValue().getClassName());
+                 if (clazz.isAnnotationPresent(Scope.class)) {
+                     Scope sc = clazz.getAnnotation(Scope.class);
+                     boolean singleton=sc.singleton();
+                     if (singleton==true) {
+                         Object object=clazz.newInstance();
+                         this.singleC.put(clazz, object);
+                     }
+                 }
+         }
+ 
+        } catch (Exception e) {
+           e.printStackTrace();
+        }
+     }
+ 
+     //INSTANCE SINGLETON
+     public Object SingletonInstances(Class<?> clazz) throws InstantiationException,IllegalAccessException,IllegalArgumentException,Exception{
+         for (Map.Entry<Class<?>, Object> entry : this.singleC.entrySet()) {
+             Class<?> classe = entry.getKey();
+             Object instance = entry.getValue();
+                     if (clazz.equals(classe)) {
+                        this.resetdefault(instance);
+                        return instance;
+                    }
+             }
+             return clazz.newInstance();          
+     }
+ 
+     //RESET
+     public void resetdefault(Object object) throws IllegalAccessException,IllegalArgumentException,Exception{
+         Field[] fields=object.getClass().getDeclaredFields();
+         for(Field field:fields)
+         {
+             if (!Modifier.isStatic(field.getModifiers())) {
+                 field.setAccessible(true);
+                 Class<?> fieldtype=field.getType();
+                 Object valeurdefault=defaultV(fieldtype);
+                 field.set(object,valeurdefault);
+               
+             }
+         }
+      }
+     //RESET VALEUR 
+     private Object defaultV(Class<?> paramType) throws Exception {
+         if (paramType == String.class) {
+             return "null";
+         } else if (paramType == int.class || paramType == Integer.class) {
+             return 0;
+         } else if (paramType == boolean.class || paramType == Boolean.class) {
+             return false;
+         }else if (paramType == double.class || paramType == Double.class) {
+             return 0.0;
+         }else {
+             return null;
+         }
+     }
 
 
 }   
