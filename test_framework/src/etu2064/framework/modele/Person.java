@@ -4,18 +4,24 @@ import etu2064.framework.myAnnotations.Url;
 import etu2064.framework.myAnnotations.Param;
 import etu2064.framework.view.ModelView;
 import java.util.Map;
+import etu2064.framework.*;
 
 public class Person {
     String nom;
     int age;
+    FileUpload fu ;
 /// GETTER & SETTER
     public String getnom() {return nom;}    public void setnom(String nom) {this.nom = nom;}
     public int getage() {return age;}       public void setage(int age) {this.age = age;}
+    public FileUpload getFu() {return fu;}  public void setFu(FileUpload fu) {this.fu = fu;}
 
     public Person(){}
     public Person(String nom, int age) {
         this.setnom(nom);
         this.setage(age);
+    }
+    public Person(FileUpload fu) {
+      this.setFu(fu);
     }
 
     @Url(name="findAll_Person")
@@ -63,6 +69,23 @@ public class Person {
       ModelView mv = new ModelView();
       Person p = new Person(nom, age);
       Map<String, Object> att = new ModelView().addItem("get",p);
+      mv.setView(jsp);
+      mv.setAttribut(att);
+      return mv;
+    }
+    @Url(name="upload_Person")
+    public ModelView upload(){
+      String jsp = "upload.jsp";
+      ModelView mv = new ModelView();
+      mv.setView(jsp);
+      return mv;
+    }
+    @Url(name="succes_Person")
+    public ModelView succes(@Param(p="fu")FileUpload fu){
+      String jsp = "succes.jsp";
+      ModelView mv = new ModelView();
+      Person p = new Person(fu);
+      Map<String, Object> att = new ModelView().addItem("file",p);
       mv.setView(jsp);
       mv.setAttribut(att);
       return mv;

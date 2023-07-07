@@ -7,6 +7,7 @@ echo %var%
 @REM ------------------------------------ETAPE 1 ---------------------------------------------
 @REM compilation en point class
 javac -d .\ .\doc\Mapping.java
+javac -d .\ .\doc\FileUpload.java
 javac -d .\ .\doc\Url.java
 javac -d .\ .\doc\Param.java
 javac -d .\ .\doc\ModelView.java
@@ -29,6 +30,8 @@ copy .\test_framework\src\send.jsp .\project\
 copy .\test_framework\src\form.jsp .\project\
 copy .\test_framework\src\save.jsp .\project\
 copy .\test_framework\src\get.jsp .\project\
+copy .\test_framework\src\succes.jsp .\project\
+copy .\test_framework\src\upload.jsp .\project\
 @REM  copier web.xml dans WEB-INF du projet
 copy .\test_framework\src\web.xml .\project\WEB-INF\
 @REM compilation des modeles
